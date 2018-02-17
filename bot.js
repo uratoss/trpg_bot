@@ -10,6 +10,7 @@ const token = process.argv[2];
 // 準備完了イベントのconsole.logで通知黒い画面に出る。
 client.on('ready',() => { console.log('ready...'); });
 
+//keeperを入れておく
 var keeper;
 // メッセージがあったら何かをする
 client.on('message', message => {
@@ -17,19 +18,28 @@ client.on('message', message => {
   let messages = message.content;
 
   if (channel.type == 'dm') {
-    if(message.author == keeper){
-      if(/^@/.test(messages)){
-        reply = message.mentions.users.array()[0];
-        reply.send(messages)
-            .then(msg => console.log(`Sent a reply to ${reply}`))
-            .catch(console.error);
-        return;
+    //trpgモード
+    if(keeper != null){
+      if(message.author == keeper){
+        if(/^@/.test(messages)){
+          let reply_user = message.mentions.users.array()[0];
+          if(reply_user == null){
+            keeper.send("自分以外に宛ててください")
+                .then(msg => console.log(`Sent a reply to ${reply_user}`))
+                .catch(console.error);
+            return;
+          }
+          reply_user.send(messages)
+              .then(msg => console.log(`Sent a reply to ${reply_user}`))
+              .catch(console.error);
+          return;
+        }
+      }else if(!message.author.bot){
+          keeper.send(message.author+'send message :\n================\n'+messages)
+              .then(mdg => console.log(`Sent a messages to ${keeper.author}`))
+              .catch(console.error);
+          return;
       }
-    }else if(!message.author.bot){
-        keeper.send(message.author+'send message :\n================\n'+messages)
-            .then(msg => console.log(`Sent a messages to ${keeper.author}`))
-            .catch(console.error);
-        return;
     }
   } else if (channel.type == 'text') {
     // 挨拶を返す
@@ -56,6 +66,7 @@ client.on('message', message => {
       client.destroy();
       return;
     }
+
     //keeperを設定する
     if (/^[:keeper|:Keeper]/.test(messages)) {
       keeper = message.mentions.users.array()[0];
