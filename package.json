@@ -1,0 +1,27 @@
+{
+  "name": "trpg_bot",
+  "version": "1.0.0",
+  "description": "This bot hepl you to play trpg.",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NakayamaSatoru/trpg_bot.git"
+  },
+  "keywords": [
+    "discord_bot"
+  ],
+  "author": "satoruNakayama",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NakayamaSatoru/trpg_bot/issues"
+  },
+  "homepage": "https://github.com/NakayamaSatoru/trpg_bot#readme",
+  "dependencies": {
+    "discord.js": "^11.3.0",
+    "node-opus": "^0.2.7",
+    "opusscript": "0.0.6"
+  }
+}
