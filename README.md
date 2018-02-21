@@ -6,4 +6,4 @@
     cd trpg_bot
     npm install  
 ## Usage
-    node bot.js <your bot token>
+    node bot.js <your bot token> <your docomoTalk token>
