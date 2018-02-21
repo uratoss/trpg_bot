@@ -10,14 +10,16 @@ const client = new Discord.Client();
 const token = process.argv[2];
 const api_key = process.argv[3];
 
-var context = '';
-var mode = 'dialog';
 
 // 準備完了イベントのconsole.logで通知黒い画面に出る。
 client.on('ready', () => { console.log('ready...'); });
 
 // keeperを入れておく
 var keeper;
+// 会話用
+var context = '';
+var mode = 'dialog';
+
 // メッセージがあったら何かをする
 client.on('message', message => {
   let channel = message.channel;
@@ -50,60 +52,65 @@ client.on('message', message => {
       }
     }
   } else if (channel.type == 'text') {
-    // 挨拶を返す
-    if (/ ^[Hello | hello] /.test(messages)) {
+    if (!message.author.bot) {
+      // 挨拶を返す
+      if (/^Hello|^hello/.test(messages)) {
 
-      let author = message.author.username;
-      let reply_text = 'こんばんわ。' + author + '様。';
+        let author = message.author.username;
+        let reply_text = 'こんばんわ。' + author + '様。';
 
-      // そのチェンネルにメッセージを送信する
-      channel.send(reply_text)
-          .then(message => console.log('Sent message: ' + reply_text))
-          .catch(console.error);
-
-      return;
-    } else if (messages == ':exit') {
-      // ログアウト
-      // そのチェンネルにメッセージを送信する
-      channel.send('bye')
-          .then(message => console.log('Sent message: bye'))
-          .catch(console.error);
-
-      client.destroy();
-      return;
-    } else if (/ ^[:keeper |:Keeper] /.test(messages)) {
-      // keeperを設定する
-      keeper = message.mentions.users.array()[0];
-      if (keeper == null) {
-        keeper = message.author;
-      }
-      let reply_text = keeper + '様をkeeperとして設定しました。';
-
-      channel.send(reply_text)
-          .then(message => console.log('Sent message: ' + reply_text))
-          .catch(console.error);
-
-      keeper.send('あなたはkeeperになりました')
-          .then(msg => console.log(`Sent a reply to ${ keeper.author }`))
-          .catch(console.error);
-      return;
-    } else if (!message.author.bot) {
-      var options = {
-        url :
-            'https://api.apigw.smt.docomo.ne.jp/dialogue/v1/dialogue?APIKEY='+api_key,
-        json : {utt : messages, context : context, mode : mode}
-      };
-
-      //リクエスト送信
-      request.post(options, function(error, response, body) {
-        context = body.context;
-        mode = body.mode;
-
-        channel.send(body.utt)
-            .then(msg => console.log(`Sent message : ${ body.utt }`))
+        // そのチェンネルにメッセージを送信する
+        channel.send(reply_text)
+            .then(message => console.log('Sent message: ' + reply_text))
             .catch(console.error);
-      });
-      return;
+
+        return;
+      } else if (messages == ':exit') {
+        // ログアウト
+        // そのチェンネルにメッセージを送信する
+        channel.send('bye')
+            .then(message => console.log('Sent message: bye'))
+            .catch(console.error);
+
+        client.destroy();
+        return;
+      } else if (/^,keeper|^,Keeper/.test(messages)) {
+        // keeperを設定する
+        keeper = message.mentions.users.array()[0];
+        if (keeper == null) {
+          keeper = message.author;
+        }
+        let reply_text = keeper + '様をkeeperとして設定しました。';
+
+        channel.send(reply_text)
+            .then(message => console.log('Sent message: ' + reply_text))
+            .catch(console.error);
+
+        keeper.send('あなたはkeeperになりました')
+            .then(msg => console.log(`Sent a reply to ${ keeper.author }`))
+            .catch(console.error);
+        return;
+      } else {
+        var options = {
+          url : 'https://api.apigw.smt.docomo.ne.jp/dialogue/v1/dialogue?APIKEY='+api_key,
+          json : {
+            utt : messages,
+            context : context,
+            mode : mode
+          }
+        };
+
+        //リクエスト送信
+        request.post(options, function(error, response, body) {
+          context = body.context;
+          mode = body.mode;
+
+          channel.send(body.utt)
+              .then(msg => console.log(`Sent message : ${ body.utt }`))
+              .catch(console.error);
+        });
+        return;
+      }
     }
   }
 });
