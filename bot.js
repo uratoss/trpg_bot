@@ -65,7 +65,7 @@ client.on('message', message => {
             .catch(console.error);
 
         return;
-      } else if (messages == ':exit') {
+      } else if (messages == ',exit') {
         // ログアウト
         // そのチェンネルにメッセージを送信する
         channel.send('bye')
