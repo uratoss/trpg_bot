@@ -1,16 +1,22 @@
 // discord.js モジュールのインポート
 const Discord = require('discord.js');
+// requestモジュールのインポート
+const request = require('request');
 
 // Discord Clientのインスタンス作成
 const client = new Discord.Client();
 
 // トークンの用意
 const token = process.argv[2];
+const api_key = process.argv[3];
+
+var context = '';
+var mode = 'dialog';
 
 // 準備完了イベントのconsole.logで通知黒い画面に出る。
-client.on('ready',() => { console.log('ready...'); });
+client.on('ready', () => { console.log('ready...'); });
 
-//keeperを入れておく
+// keeperを入れておく
 var keeper;
 // メッセージがあったら何かをする
 client.on('message', message => {
@@ -18,32 +24,34 @@ client.on('message', message => {
   let messages = message.content;
 
   if (channel.type == 'dm') {
-    //trpgモード
-    if(keeper != null){
-      if(message.author == keeper){
-        if(/^@/.test(messages)){
+    // trpgモード
+    if (keeper != null) {
+      if (message.author == keeper) {
+        if (/ ^@ /.test(messages)) {
           let reply_user = message.mentions.users.array()[0];
-          if(reply_user == null){
+          if (reply_user == null) {
             keeper.send("自分以外に宛ててください")
-                .then(msg => console.log(`Sent a reply to ${reply_user}`))
+                .then(msg => console.log(`Sent a reply to ${ reply_user }`))
                 .catch(console.error);
             return;
           }
           reply_user.send(messages)
-              .then(msg => console.log(`Sent a reply to ${reply_user}`))
+              .then(msg => console.log(`Sent a reply to ${ reply_user }`))
               .catch(console.error);
           return;
         }
-      }else if(!message.author.bot){
-          keeper.send(message.author+'send message :\n================\n'+messages)
-              .then(mdg => console.log(`Sent a messages to ${keeper.author}`))
-              .catch(console.error);
-          return;
+      } else if (!message.author.bot) {
+        keeper
+            .send(message.author + 'send message : \n==================\n' +
+                    messages)
+            .then(mdg => console.log(`Sent a messages to ${ keeper.author }`))
+            .catch(console.error);
+        return;
       }
     }
   } else if (channel.type == 'text') {
     // 挨拶を返す
-    if (/^[Hello|hello]/.test(messages)) {
+    if (/ ^[Hello | hello] /.test(messages)) {
 
       let author = message.author.username;
       let reply_text = 'こんばんわ。' + author + '様。';
@@ -54,10 +62,8 @@ client.on('message', message => {
           .catch(console.error);
 
       return;
-    }
-    // ログアウト
-    if (messages == ':exit') {
-
+    } else if (messages == ':exit') {
+      // ログアウト
       // そのチェンネルにメッセージを送信する
       channel.send('bye')
           .then(message => console.log('Sent message: bye'))
@@ -65,12 +71,10 @@ client.on('message', message => {
 
       client.destroy();
       return;
-    }
-
-    //keeperを設定する
-    if (/^[:keeper|:Keeper]/.test(messages)) {
+    } else if (/ ^[:keeper |:Keeper] /.test(messages)) {
+      // keeperを設定する
       keeper = message.mentions.users.array()[0];
-      if(keeper  == null){
+      if (keeper == null) {
         keeper = message.author;
       }
       let reply_text = keeper + '様をkeeperとして設定しました。';
@@ -80,12 +84,28 @@ client.on('message', message => {
           .catch(console.error);
 
       keeper.send('あなたはkeeperになりました')
-          .then(msg => console.log(`Sent a reply to ${keeper.author}`))
+          .then(msg => console.log(`Sent a reply to ${ keeper.author }`))
           .catch(console.error);
+      return;
+    } else if (!message.author.bot) {
+      var options = {
+        url :
+            'https://api.apigw.smt.docomo.ne.jp/dialogue/v1/dialogue?APIKEY='+api_key,
+        json : {utt : messages, context : context, mode : mode}
+      };
+
+      //リクエスト送信
+      request.post(options, function(error, response, body) {
+        context = body.context;
+        mode = body.mode;
+
+        channel.send(body.utt)
+            .then(msg => console.log(`Sent message : ${ body.utt }`))
+            .catch(console.error);
+      });
       return;
     }
   }
-
 });
 
 client.on('messageReactionAdd', function(messageReactin, user) {
