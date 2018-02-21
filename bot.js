@@ -33,12 +33,12 @@ client.on('message', message => {
           let reply_user = message.mentions.users.array()[0];
           if (reply_user == null) {
             keeper.send("自分以外に宛ててください")
-                .then(msg => console.log(`Sent a reply to ${ reply_user }`))
+                .then(message => console.log(`Sent a reply to ${ reply_user }`))
                 .catch(console.error);
             return;
           }
           reply_user.send(messages)
-              .then(msg => console.log(`Sent a reply to ${ reply_user }`))
+              .then(message => console.log(`Sent a reply to ${ reply_user }`))
               .catch(console.error);
           return;
         }
@@ -51,7 +51,9 @@ client.on('message', message => {
         return;
       }
     }
-  } else if (channel.type == 'text') {
+  }
+  if (channel.type == 'text') {
+    //bot自身のメッセージは反応させない
     if (!message.author.bot) {
       // 挨拶を返す
       if (/^Hello|^hello/.test(messages)) {
@@ -65,17 +67,18 @@ client.on('message', message => {
             .catch(console.error);
 
         return;
-      } else if (messages == ',exit') {
-        // ログアウト
-        // そのチェンネルにメッセージを送信する
+      }
+      // ログアウト
+      if (messages == ',exit') {
         channel.send('bye')
             .then(message => console.log('Sent message: bye'))
             .catch(console.error);
 
         client.destroy();
         return;
-      } else if (/^,keeper|^,Keeper/.test(messages)) {
-        // keeperを設定する
+      }
+      // keeperを設定する
+      if (/^,keeper|^,Keeper/.test(messages)) {
         keeper = message.mentions.users.array()[0];
         if (keeper == null) {
           keeper = message.author;
@@ -83,46 +86,47 @@ client.on('message', message => {
         let reply_text = keeper + '様をkeeperとして設定しました。';
 
         channel.send(reply_text)
-            .then(message => console.log('Sent message: ' + reply_text))
+            .then(message => console.log(`Sent message : ${reply_text}`))
             .catch(console.error);
 
         keeper.send('あなたはkeeperになりました')
-            .then(msg => console.log(`Sent a reply to ${ keeper.author }`))
+            .then(message => console.log(`Sent a reply to ${ keeper.author }`))
             .catch(console.error);
         return;
-      } else {
-        var options = {
-          url : 'https://api.apigw.smt.docomo.ne.jp/dialogue/v1/dialogue?APIKEY='+api_key,
-          json : {
-            utt : messages,
-            context : context,
-            mode : mode
-          }
-        };
-
-        //リクエスト送信
-        request.post(options, function(error, response, body) {
-          context = body.context;
-          mode = body.mode;
-
-          channel.send(body.utt)
-              .then(msg => console.log(`Sent message : ${ body.utt }`))
-              .catch(console.error);
-        });
-        return;
       }
+      //通常の会話をする
+      var options = {
+        url : 'https://api.apigw.smt.docomo.ne.jp/dialogue/v1/dialogue?APIKEY='+api_key,
+        json : {
+          utt : messages,
+          context : context,
+          mode : mode
+        }
+      };
+
+      //リクエスト送信
+      request.post(options, function(error, response, body) {
+        context = body.context;
+        mode = body.mode;
+
+        channel.send(body.utt)
+            .then(message => console.log(`Sent message : ${ body.utt }`))
+            .catch(console.error);
+      });
+      return;
     }
   }
 });
 
-client.on('messageReactionAdd', function(messageReactin, user) {
-  let channel = messageReactin.message.channel;
-
-  channel.send(user.username + '様、ありがとうございます。')
-      .then(message => console.log('Sent message: reply action'))
-      .catch(console.error);
-
-  return;
+client.on('messageReactionAdd', (messageReaction, user) => {
+  let channel = messageReaction.message.channel;
+  let is_bot = messageReaction.message.author.bot;
+  if(is_bot){
+    channel.send(user.username + '様、ありがとうございます。')
+        .then(message => console.log('Sent message: reply action'))
+        .catch(console.error);
+    return;
+  }
 });
 
 // Discordへの接続
