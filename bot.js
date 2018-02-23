@@ -10,7 +10,6 @@ const client = new Discord.Client();
 const token = process.argv[2];
 const api_key = process.argv[3];
 
-
 // 準備完了イベントのconsole.logで通知黒い画面に出る。
 client.on('ready', () => { console.log('ready...'); });
 
@@ -61,9 +60,8 @@ client.on('message', message => {
         let author = message.author.username;
         let reply_text = 'こんばんわ。' + author + '様。';
 
-        // そのチェンネルにメッセージを送信する
         channel.send(reply_text)
-            .then(message => console.log('Sent message: ' + reply_text))
+            .then(message => console.log('Sent message : ' + reply_text))
             .catch(console.error);
 
         return;
@@ -71,7 +69,7 @@ client.on('message', message => {
       // ログアウト
       if (messages == ',exit') {
         channel.send('bye')
-            .then(message => console.log('Sent message: bye'))
+            .then(message => console.log('Sent message : bye'))
             .catch(console.error);
 
         client.destroy();
@@ -92,6 +90,35 @@ client.on('message', message => {
         keeper.send('あなたはkeeperになりました')
             .then(message => console.log(`Sent a reply to ${ keeper.author }`))
             .catch(console.error);
+        return;
+      }
+      // 録音開始
+      if (/^,record|^,Record/.test(messages)){
+        let sender = message.member;
+        let ch = sender.voiceChannel;
+
+        if (ch != null) {
+          ch.join().then(connection => {
+            channel.send('録音を開始します')
+              .then(message => console.log('Sent message : start recording'))
+              .catch(console.error);
+          }).catch(console.error);
+        }
+        return;
+      }
+
+      // 録音停止
+      if (/^,stop|^,Stop/.test(messages)){
+        let sender = message.member;
+        let ch = sender.voiceChannel;
+
+        // 送信者がボイスチャンネルに接続しているなら
+        if (ch != null) {
+          ch.leave();
+        }
+        channel.send('録音をやめます')
+          .then(message => console.log('Sent message : stop recording'))
+          .catch(console.error);
         return;
       }
       //通常の会話をする
@@ -128,6 +155,7 @@ client.on('messageReactionAdd', (messageReaction, user) => {
     return;
   }
 });
+
 
 // Discordへの接続
 client.login(token);
