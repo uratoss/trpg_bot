@@ -2,6 +2,8 @@
 const Discord = require('discord.js');
 // requestモジュールのインポート
 const request = require('request');
+// fsモジュールのインポート
+const fs = require('fs');
 
 // Discord Clientのインスタンス作成
 const client = new Discord.Client();
@@ -102,6 +104,17 @@ client.on('message', message => {
             channel.send('録音を開始します')
               .then(message => console.log('Sent message : start recording'))
               .catch(console.error);
+            const receiver = connection.createReceiver();
+            connection.on('speaking',(user,is_speaking) =>{
+              if(is_speaking){
+                const audio = receiver.createPCMStream(user);
+                const fileName = `./recordings/${ch.name}_${user.username}_${Date.now()}.pcm`;
+                const output = fs.createWriteStream(fileName);
+                //書き込み
+                audio.pipe(output);
+                output.on("data", console.log);
+              }
+            });
           }).catch(console.error);
         }
         return;
