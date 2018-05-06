@@ -4,13 +4,17 @@ const Discord = require('discord.js');
 const request = require('request');
 // fsモジュールのインポート
 const fs = require('fs');
+//設定情報
+const config = require('./config.json');
 
 // Discord Clientのインスタンス作成
 const client = new Discord.Client();
 
 // トークンの用意
-const token = process.argv[2];
-const api_key = process.argv[3];
+const token =config.discord_token;// process.argv[2];
+const api_key = config.docomo_token;//process.argv[3];
+//const token = process.argv[2];
+//const api_key = process.argv[3];
 
 // 準備完了イベントのconsole.logで通知黒い画面に出る。
 client.on('ready', () => { console.log('ready...'); });
@@ -97,24 +101,28 @@ client.on('message', message => {
       // 録音開始
       if (/^,record|^,Record/.test(messages)){
         let sender = message.member;
-        let ch = sender.voiceChannel;
-
-        if (ch != null) {
+        if (sender.voiceChannel != null) {
+          let ch = sender.voiceChannel;
           ch.join().then(connection => {
             channel.send('録音を開始します')
               .then(message => console.log('Sent message : start recording'))
               .catch(console.error);
-            const receiver = connection.createReceiver();
-            connection.on('speaking',(user,is_speaking) =>{
-              if(is_speaking){
-                const audio = receiver.createPCMStream(user);
-                const fileName = `./recordings/${ch.name}_${user.username}_${Date.now()}.pcm`;
-                const output = fs.createWriteStream(fileName);
-                //書き込み
-                audio.pipe(output);
-                output.on("data", console.log);
-              }
+            let con = connection;
+            con.on('speaking',(user,is_speaking) =>{
+                const receiver = con.createReceiver();
+                if(is_speaking){
+                  receiver.on('opus', (user,buff) => {
+                      console.log(user.username);
+                    });
+                  const audio = receiver.createOpusStream(user);
+                  const fileName = `./recordings/${ch.name}_${user.username}_${Date.now()}`;
+                  const output = fs.createWriteStream(fileName+'.opus');
+                  //書き込み
+                  audio.pipe(output);
+                  output.on("data", console.log);
+                }
             });
+
           }).catch(console.error);
         }
         return;
@@ -168,7 +176,6 @@ client.on('messageReactionAdd', (messageReaction, user) => {
     return;
   }
 });
-
 
 // Discordへの接続
 client.login(token);
