@@ -107,16 +107,15 @@ client.on('message', message => {
             channel.send('録音を開始します')
               .then(message => console.log('Sent message : start recording'))
               .catch(console.error);
-            let con = connection;
-            con.on('speaking',(user,is_speaking) =>{
-                const receiver = con.createReceiver();
+            connection.on('speaking',(user,is_speaking) =>{
+                const receiver = connection.createReceiver();
                 if(is_speaking){
                   receiver.on('opus', (user,buff) => {
                       console.log(user.username);
                     });
-                  const audio = receiver.createOpusStream(user);
+                  const audio = receiver.createPCMStream(user);
                   const fileName = `./recordings/${ch.name}_${user.username}_${Date.now()}`;
-                  const output = fs.createWriteStream(fileName+'.opus');
+                  let output = fs.createWriteStream(fileName+'.pcm');
                   //書き込み
                   audio.pipe(output);
                   output.on("data", console.log);
